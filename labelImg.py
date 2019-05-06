@@ -8,6 +8,7 @@ import re
 import sys
 import subprocess
 
+from shutil import copyfile
 from functools import partial
 from collections import defaultdict
 
@@ -1027,18 +1028,18 @@ class MainWindow(QMainWindow, WindowMixin):
                 """Annotation file priority:
                 PascalXML > YOLO
                 """
-                if os.path.isfile(xmlPath):
-                    self.loadPascalXMLByFilename(xmlPath)
-                elif os.path.isfile(txtPath):
+                if os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
+                elif os.path.isfile(xmlPath):
+                    self.loadPascalXMLByFilename(xmlPath)
+
             else:
                 xmlPath = os.path.splitext(filePath)[0] + XML_EXT
                 txtPath = os.path.splitext(filePath)[0] + TXT_EXT
-                if os.path.isfile(xmlPath):
-                    self.loadPascalXMLByFilename(xmlPath)
-                elif os.path.isfile(txtPath):
+                if os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
-
+                elif os.path.isfile(xmlPath):
+                    self.loadPascalXMLByFilename(xmlPath)
             self.setWindowTitle(__appname__ + ' ' + filePath)
 
             # Default : select last item if there is at least one item
@@ -1259,9 +1260,22 @@ class MainWindow(QMainWindow, WindowMixin):
             filename = self.mImgList[0]
         else:
             currIndex = self.mImgList.index(self.filePath)
+            # TODO: add
+            print(self.defaultSaveDir)
+            currfilename = self.mImgList[currIndex]
             if currIndex + 1 < len(self.mImgList):
                 filename = self.mImgList[currIndex + 1]
+                currid = int(os.path.split(currfilename)[-1].split('_')[-1].split('.')[0])
+                nextid = int(os.path.split(filename)[-1].split('_')[-1].split('.')[0])
+                currtxt = os.path.splitext(currfilename)[0].replace('images', 'labels') + '.txt'
+                print('test', currtxt)
+                if (nextid-currid) < 5 and os.path.isfile(currtxt):
+                    srcfile = os.path.join(self.defaultSaveDir,
+                                           os.path.splitext(os.path.split(currfilename)[-1])[0] + '.txt')
+                    dstfile = os.path.join(self.defaultSaveDir,
+                                           os.path.splitext(os.path.split(filename)[-1])[0] + '.txt')
 
+                    copyfile(srcfile, dstfile)
         if filename:
             self.loadFile(filename)
 
